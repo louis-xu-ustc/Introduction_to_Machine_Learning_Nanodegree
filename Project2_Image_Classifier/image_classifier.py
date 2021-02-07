@@ -18,6 +18,8 @@ def create_classifier(model, input_units, hidden_units, dropout):
     for param in model.parameters():
         param.requires_grad = False
 
+#     print("model: {}".format(model))
+#     print("input_units: {}".format(input_units))
     classifier = nn.Sequential(OrderedDict([
         ('fc1', nn.Linear(input_units, hidden_units)),
         ('relu', nn.ReLU()),
@@ -25,7 +27,7 @@ def create_classifier(model, input_units, hidden_units, dropout):
         ('fc2', nn.Linear(hidden_units, 102)),
         ('output', nn.LogSoftmax(dim=1))
     ]))
-    model.classifier = classifier
+    return classifier
 
 
 def train_model(model, epochs, train_loader, valid_loader, criterion, optimizer, print_every, gpu_mode):
@@ -219,7 +221,7 @@ def process_image(image_path):
     return np_image
 
 
-def predict(image_path, model, topk=5):
+def predict(image_path, model, topk=5, gpu_mode=False):
     """
     Predict the class (or classes) of an image using a trained deep learning model.
     :param image_path:
@@ -228,8 +230,17 @@ def predict(image_path, model, topk=5):
     :return:
     """
 
-    # switch to cpu and eval mode
+    # switch to eval mode
     model.eval()
+    
+    # switch between cpu and gpu mode
+    device = torch.device("cpu")
+    torchType = torch.FloatTensor
+    model.cpu()
+    if torch.cuda.is_available() and gpu_mode:
+        device = torch.device("cuda")
+        torchType = torch.cuda.FloatTensor
+        model.cuda()
 
     # process the image
     image = process_image(image_path)
@@ -238,7 +249,9 @@ def predict(image_path, model, topk=5):
     ## fix errors:
     # Dimension error
     # Expected object of type torch.DoubleTensor but found type torch.FloatTensor'
-    torch_image = torch.from_numpy(np.expand_dims(image, axis=0)).type(torch.FloatTensor)
+#     print("work mode: {}".format(device))
+    torch_image = torch.from_numpy(np.expand_dims(image, axis=0)).type(torchType)
+    torch_image.to(device)
 
     # model prediction to get log prob
     log_ps = model.forward(torch_image)
@@ -253,8 +266,13 @@ def predict(image_path, model, topk=5):
     #     print(top_classes)
 
     # convert to list
-    top_probs_list = top_probs.detach().numpy()[0]
-    top_indexes_list = top_indexes.detach().numpy()[0]
+    top_probs_list, top_indexes_list = [], []
+    if torch.cuda.is_available() and gpu_mode:
+        top_probs_list = top_probs.cpu().detach().numpy()[0]
+        top_indexes_list = top_indexes.cpu().detach().numpy()[0]
+    else:
+        top_probs_list = top_probs.detach().numpy()[0]
+        top_indexes_list = top_indexes.detach().numpy()[0]
 
     # invert index-class
     class_to_index = model.class_to_idx

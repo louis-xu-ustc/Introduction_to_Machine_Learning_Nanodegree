@@ -9,8 +9,7 @@ from image_classifier import create_classifier, train_model, test_model, save_mo
 parser = argparse.ArgumentParser(description='Train a network on a data set with train.py.')
 parser.add_argument('data_directory', action='store', help='Enter path to training data')
 parser.add_argument('--arch', action='store', dest='pre_trained_model',
-                    default='vgg16', help='Choose an architecture that has a layer named classifier, '
-                                          'please note resnet18 is not satisfied')
+                    default='vgg16', help='Choose an architecture: vgg16 or resnet18')
 parser.add_argument('--dropout', action='store', dest='dropout',
                     default=0.2, help='The probability of an element to be zeroed for dropout purpose', type=float)
 parser.add_argument('--hidden_units', action='store', dest='hidden_units',
@@ -24,7 +23,7 @@ parser.add_argument('--print_every', action='store', dest='print_every',
 parser.add_argument('--save_dir', action='store', dest='save_directory',
                     default='checkpoint.pth', help='Set directory to save checkpoints')
 parser.add_argument('--gpu', action='store_true', default=False,
-                    help='Use GPU for training, default is off', type=bool)
+                    help='Use GPU for training, default is off')
 params = parser.parse_args()
 
 data_dir = params.data_directory
@@ -37,6 +36,10 @@ print_every = params.print_every
 save_dir = params.save_directory
 gpu_mode = params.gpu
 
+print("train.py params -----")
+print("data_directory: {}, arch: {}, dropout: {}, hidden_units: {}, learning_rate: {}, epochs: {}, print_every: {}, save_dir: {}, gpu_mode: {}".
+      format(data_dir, pre_trained_model, dropout, hidden_units, lr, epochs, print_every, save_dir, gpu_mode))
+
 # step 1: load the data
 train_datasets, valid_datasets, test_datasets, train_loader, valid_loader, test_loader = load_data(data_dir=data_dir)
 
@@ -46,13 +49,25 @@ train_datasets, valid_datasets, test_datasets, train_loader, valid_loader, test_
 model = getattr(models, pre_trained_model)(pretrained=True)
 
 # step 2.2: replace the pre-trained model with a new classifier
-input_units = model.classifier[0].in_features
-create_classifier(model=model, input_units=input_units, hidden_units=hidden_units, dropout=dropout)
-
 # step 2.3: train the classifier layers using backpropagation using the pre-trained network to get the features
 criterion = nn.NLLLoss()
+
+input_units = 0        
+if pre_trained_model == "vgg16":
+    input_units = model.classifier[0].in_features
+elif pre_trained_model == "resnet18":
+    input_units = model.fc.in_features
+classifier = create_classifier(model=model, input_units=input_units, hidden_units=hidden_units, dropout=dropout)
+
 # use adam optimizer to avoid local minimal
-optimizer = optim.Adam(model.classifier.parameters(), lr=lr)
+optimizer = {}
+if pre_trained_model == "vgg16":
+    model.classifier = classifier
+    optimizer = optim.Adam(model.classifier.parameters(), lr=lr)
+elif pre_trained_model == "resnet18":
+    model.fc = classifier
+    optimizer = optim.Adam(model.fc.parameters(), lr=lr)
+
 model = train_model(model=model, epochs=epochs, train_loader=train_loader, valid_loader=valid_loader,
                     criterion=criterion, optimizer=optimizer, print_every=print_every, gpu_mode=gpu_mode)
 
