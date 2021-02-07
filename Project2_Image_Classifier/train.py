@@ -9,21 +9,22 @@ from image_classifier import create_classifier, train_model, test_model, save_mo
 parser = argparse.ArgumentParser(description='Train a network on a data set with train.py.')
 parser.add_argument('data_directory', action='store', help='Enter path to training data')
 parser.add_argument('--arch', action='store', dest='pre_trained_model',
-                    default='vgg16', help='Choose architecture')
+                    default='vgg16', help='Choose an architecture that has a layer named classifier, '
+                                          'please note resnet18 is not satisfied')
 parser.add_argument('--dropout', action='store', dest='dropout',
-                    default=0.2, help='The probability of an element to be zeroed for dropout purpose')
+                    default=0.2, help='The probability of an element to be zeroed for dropout purpose', type=float)
 parser.add_argument('--hidden_units', action='store', dest='hidden_units',
-                    default=500, help='Set hidden units for model training')
+                    default=500, help='Set hidden units for model training', type=int)
 parser.add_argument('--learning_rate', action='store', dest='learning_rate',
-                    default=0.001, help='Set learning rate for model training')
+                    default=0.001, help='Set learning rate for model training', type=float)
 parser.add_argument('--epochs', action='store', dest='epochs',
-                    default=2, help='Set number of epochs for model training')
+                    default=2, help='Set number of epochs for model training', type=int)
 parser.add_argument('--print_every', action='store', dest='print_every',
-                    default=5, help='Set the frequency of message print for model training')
+                    default=5, help='Set the frequency of message print for model training', type=int)
 parser.add_argument('--save_dir', action='store', dest='save_directory',
                     default='checkpoint.pth', help='Set directory to save checkpoints')
 parser.add_argument('--gpu', action='store_true', default=False,
-                    help='Use GPU for training, default is off')
+                    help='Use GPU for training, default is off', type=bool)
 params = parser.parse_args()
 
 data_dir = params.data_directory

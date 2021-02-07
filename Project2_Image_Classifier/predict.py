@@ -12,11 +12,11 @@ parser.add_argument('--arch', action='store', dest='pre_trained_model',
 parser.add_argument('--save_dir', action='store', dest='save_directory',
                     default='checkpoint.pth', help='Set directory to save checkpoints')
 parser.add_argument('--top_k', action='store', dest='topk', default=5,
-                    help='The top K most likely class')
+                    help='The top K most likely class', type=int)
 parser.add_argument('--category_names', action='store', dest='cat_to_name',
                     default='cat_to_name.json', help='Provide a mapping of categories to real names')
 parser.add_argument('--gpu', action='store_true', default=False,
-                    help='Use GPU for training, default is off')
+                    help='Use GPU for training, default is off', type=bool)
 params = parser.parse_args()
 
 image_path = params.image_path

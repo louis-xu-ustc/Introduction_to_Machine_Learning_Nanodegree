@@ -16,7 +16,7 @@ def create_classifier(model, input_units, hidden_units, dropout):
     """
     # freeze parameter so that we don't backprop through them
     for param in model.parameters():
-        param.requires_grd = False
+        param.requires_grad = False
 
     classifier = nn.Sequential(OrderedDict([
         ('fc1', nn.Linear(input_units, hidden_units)),
@@ -171,7 +171,7 @@ def load_checkpoint(model, filepath):
 
     # freeze parameter so that we don't backprop through them
     for param in model.parameters():
-        param.requires_grd = False
+        param.requires_grad = False
 
     return model
 
@@ -229,7 +229,6 @@ def predict(image_path, model, topk=5):
     """
 
     # switch to cpu and eval mode
-    model.to('cpu')
     model.eval()
 
     # process the image
